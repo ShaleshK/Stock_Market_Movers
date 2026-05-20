@@ -13,14 +13,15 @@ class EODHDEquityExtractor:
     def __init__(self, api_key: Optional[str] = None):
         # Fall back to environment loading if not explicitly passed
         self.api_key = api_key or os.getenv("EODHD_API_KEY")
-        self.base_url = "https://eodhd.com"
+        self.base_url = "https://eodhd.com/api"
         
         if not self.api_key:
             logging.error("Initialization Failed: EODHD_API_KEY environment token is missing.")
             raise ValueError("A valid EODHD API Key must be provided or configured in your environment.")
 
     def fetch_exchange_symbols(self, exchange_code: str) -> List[Dict[str, Any]]:
-        """Pulls all active ticker listings for a specific exchange code (e.g., 'US', 'LSE')."""
+        """Pulls all active ticker listings for a specific exchange code (e.g., 'US')."""
+        # Clean, un-slashed endpoint layout string
         endpoint = f"{self.base_url}/exchange-symbol-list/{exchange_code}"
         params = {"api_token": self.api_key, "fmt": "json"}
         
@@ -39,33 +40,41 @@ class EODHDEquityExtractor:
 
     def extract_and_filter_large_caps(self, exchanges: List[str] = ["US"]) -> pd.DataFrame:
         """
-        Loops through target exchanges, aggregates ticker strings, 
-        and extracts equities with a Market Cap >= $1,000,000,000.
+        Production Version: Uses EODHD Bulk Fundamentals to extract 
+        true large-cap equities worth >= $1,000,000,000.
         """
         aggregated_tickers = []
         
         for exchange in exchanges:
-            raw_symbols = self.fetch_exchange_symbols(exchange_code=exchange)
+            # Documented EODHD endpoint for pulling entire exchange financial traits at once
+            endpoint = f"{self.base_url}/bulk-fundamentals/{exchange}"
+            params = {"api_token": self.api_key, "fmt": "json"}
             
-            for item in raw_symbols:
-                # Target Common Stocks and filter by Market Cap floor safely
-                if item.get("Type") == "Common Stock":
-                    # Convert market capitalization securely to float for matching evaluation
-                    try:
-                        market_cap = float(item.get("MarketCapitalization", 0))
-                    except (ValueError, TypeError):
-                        market_cap = 0.0
+            try:
+                response = requests.get(endpoint, params=params, timeout=30)
+                if response.status_code == 200:
+                    bulk_data = response.json()
+                    
+                    for ticker_code, financial_records in bulk_data.items():
+                        # Extract deep structural fundamental parameters safely
+                        general_info = financial_records.get("General", {})
+                        highlights = financial_records.get("Highlights", {})
                         
-                    if market_cap >= 1_000_000_000:
-                        aggregated_tickers.append({
-                            "ticker": f"{item.get('Code')}.{exchange}",
-                            "name": item.get("Name"),
-                            "exchange": exchange,
-                            "market_cap": market_cap
-                        })
+                        if general_info.get("Type") == "Common Stock":
+                            market_cap = float(highlights.get("MarketCapitalization", 0))
+                            
+                            if market_cap >= 1_000_000_000:
+                                aggregated_tickers.append({
+                                    "ticker": f"{ticker_code}.{exchange}",
+                                    "name": general_info.get("Name"),
+                                    "exchange": exchange,
+                                    "market_cap": market_cap
+                                })
+            except Exception as e:
+                logging.error(f"Failed to ingest bulk fundamentals for {exchange}: {e}")
                         
         df_large_caps = pd.DataFrame(aggregated_tickers)
-        logging.info(f"🎯 Aggregation Finished: Generated subset containing {len(df_large_caps)} Large Cap Equities.")
+        logging.info(f"🎯 Production Filter Complete: Isolated {len(df_large_caps)} true Large-Cap entities.")
         return df_large_caps
 
 if __name__ == "__main__":
