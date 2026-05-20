@@ -107,23 +107,19 @@ Use code with caution.🧱 Production Fix 2: Add Real Market CapsTo filter for t
         return df_large_caps
 
         # 4. Export directly to your linked worksheet tracking canvas
-        # New bulletproof local file connection block
-        import json
-        with open("service_account.json", "r") as json_file:
-            clean_json_str = json.dumps(json.load(json_file))
+        # HYBRID CREDS LOADER: Dynamically switches between local file and cloud environment variables
+        if os.path.exists("service_account.json"):
+            logging.info("🔑 Local environment detected: Ingesting credentials from service_account.json...")
+            with open("service_account.json", "r") as json_file:
+                final_json_credentials = json.dumps(json.load(json_file))
+        else:
+            logging.info("☁️ Cloud environment detected: Fetching credentials from encrypted GitHub Secrets...")
+            final_json_credentials = gcs_json
 
         writer = GoogleSheetsReportWriter(
             spreadsheet_name="Stock Market Movers Report", 
-            credential_json_str=clean_json_str
+            credential_json_str=final_json_credentials
         )
-        
-        current_date_str = datetime.today().strftime('%Y-%m-%d')
-        tab_title = f"{current_date_str} (30D Movers)"
-        
-        writer.export_movers_to_worksheet(title=tab_title, gainers_df=gainers_30d, losers_df=losers_30d)
-        writer.manage_older_worksheets(prefix_to_keep=current_date_str)
-        
-        logging.info("✨ Local Pipeline Execution Finished with 100% success!")
 
     except Exception as pipeline_error:
         logging.error(f"💥 Pipeline Execution Failed: {pipeline_error}")
