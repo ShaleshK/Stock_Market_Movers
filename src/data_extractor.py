@@ -46,8 +46,7 @@ class EODHDEquityExtractor:
         aggregated_tickers = []
         
         for exchange in exchanges:
-            # Documented EODHD endpoint for pulling entire exchange financial traits at once
-            endpoint = f"{self.base_url}/bulk-fundamentals/{exchange}"
+            endpoint = f"https://eodhd.com{exchange}"
             params = {"api_token": self.api_key, "fmt": "json"}
             
             try:
@@ -56,7 +55,6 @@ class EODHDEquityExtractor:
                     bulk_data = response.json()
                     
                     for ticker_code, financial_records in bulk_data.items():
-                        # Extract deep structural fundamental parameters safely
                         general_info = financial_records.get("General", {})
                         highlights = financial_records.get("Highlights", {})
                         

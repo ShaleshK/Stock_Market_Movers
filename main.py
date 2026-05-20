@@ -67,7 +67,7 @@ def run_production_pipeline():
         # Execute our mathematical transforms using 100% real stock data
         performance_df = transformer.calculate_price_performance(real_price_history)
         gainers_30d, losers_30d = transformer.extract_top_movers(performance_df, days_window=30, top_n=25)
-Use code with caution.🧱 Production Fix 2: Add Real Market CapsTo filter for true companies worth over $1 Billion, we need to request the data fields from an EODHD endpoint that contains financial fundamentals, rather than just the basic symbol list endpoint.Open your src/data_extractor.py file, and update the function block to fetch the Bulk Fundamentals Endpoint, which returns real market caps:python    def extract_and_filter_large_caps(self, exchanges: List[str] = ["US"]) -> pd.DataFrame:
+        #Production Fix 2: Add Real Market CapsTo filter for true companies worth over $1 Billion, we need to request the data fields from an EODHD endpoint that contains financial fundamentals, rather than just the basic symbol list endpoint.Open your src/data_extractor.py file, and update the function block to fetch the Bulk Fundamentals Endpoint, which returns real market caps:python    def extract_and_filter_large_caps(self, exchanges: List[str] = ["US"]) -> pd.DataFrame:
         """
         Production Version: Uses EODHD Bulk Fundamentals to extract 
         true large-cap equities worth >= $1,000,000,000.
