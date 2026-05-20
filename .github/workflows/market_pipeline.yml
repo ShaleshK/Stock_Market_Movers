@@ -35,5 +35,13 @@ jobs:
       env:
         EODHD_API_KEY: ${{ secrets.EODHD_API_KEY }}
         GCS_SERVICE_ACCOUNT_KEY_JSON: ${{ secrets.GCS_SERVICE_ACCOUNT_KEY_JSON }}
+      # Step 4: Inject
+      GitHub
+      Secrets safely and declare system paths
+    - name: Execute Main Production Orchestrator
+      env:
+        EODHD_API_KEY: ${{ secrets.EODHD_API_KEY }}
+        GCS_SERVICE_ACCOUNT_KEY_JSON: ${{ secrets.GCS_SERVICE_ACCOUNT_KEY_JSON }}
+        PYTHONPATH: ${{ github.workspace }}  # Tells the cloud server exactly where your src/ folder lives
       run: |
         python main.py
