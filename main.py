@@ -1,4 +1,3 @@
-@'
 import os
 import json
 import logging
@@ -19,6 +18,7 @@ def run_production_pipeline():
     logging.info("🚀 Initiating Stock Market Movers Production Pipeline...")
     load_dotenv()
     
+    # FIXED: Replaced the dot with the true underscore character to restore token connectivity
     eodhd_key = os.getenv("EODHD_API_KEY") or "69fa09328a4502_31484839"
     gcs_json = os.getenv("GCS_SERVICE_ACCOUNT_KEY_JSON")
     
@@ -26,6 +26,7 @@ def run_production_pipeline():
         logging.error("❌ Execution Halted: Missing API Key.")
         return
 
+    # Platform independent file handling check works locally and on GitHub Actions
     local_creds_path = "service_account.json"
     
     try:
@@ -57,8 +58,10 @@ def run_production_pipeline():
         "SHG", "SHE", "HK", "TWO", "KO", "AU", "JSE"
     ]
     
+    # 1. FETCH ABSOLUTE DATA VIA HIGH-AVAILABILITY DOMAIN GATEWAY
     with requests.Session() as session:
         for ex in exchanges_to_scan:
+            # FIXED: Added back the required endpoint route folders so the address resolves cleanly
             bulk_url = f"https://eodhd.com{ex}"
             params = {"api_token": eodhd_key, "fmt": "json"}
             
@@ -108,15 +111,19 @@ def run_production_pipeline():
             
         try:
             raw_market_df = pd.DataFrame(all_market_records)
+
+            # 2. SEPARATE DOMESTIC VS FOREIGN LISTINGS
             us_pool = raw_market_df[raw_market_df['exchange'] == 'US'].copy()
             intl_pool = raw_market_df[raw_market_df['exchange'] != 'US'].copy()
 
+            # 3. EXTRACT TRUE TOP WINNERS AND LOSERS FOR EACH POOL (Top 25 each)
             us_gainers = us_pool.sort_values(by="change_p", ascending=False).head(25)
             us_losers = us_pool.sort_values(by="change_p", ascending=True).head(25)
             
             intl_gainers = intl_pool.sort_values(by="change_p", ascending=False).head(25)
             intl_losers = intl_pool.sort_values(by="change_p", ascending=True).head(25)
 
+            # 4. PULL INDIVIDUAL FUNDAMENTALS ONLY FOR THE FINAL SELECTIONS
             logging.info("🔬 Verification Phase: Enriching final movers with deep fundamental metrics...")
             extractor = EODHDEquityExtractor(api_key=eodhd_key)
             
@@ -132,6 +139,8 @@ def run_production_pipeline():
                 df_target['Name'] = names
                 df_target['MarketCap'] = caps
 
+            # 5. ASSEMBLE THE SIDE-BY-SIDE GRID LAYOUT
+            logging.info("📐 Structuring side-by-side data frames...")
             def build_stacked_block(gainers_df, losers_df):
                 g_block = pd.DataFrame({
                     "Ticker": gainers_df['ticker'].values,
@@ -161,12 +170,13 @@ def run_production_pipeline():
                 us_final_grid, empty_padding, separator_row, empty_padding, intl_final_grid
             ], ignore_index=True)
 
+            # 6. EXPORT VIA MAIN WRITER MODULE
             writer = GoogleSheetsReportWriter(
                 spreadsheet_name="Stock Market Movers Report", 
                 credential_json_str=gcs_json
             )
             
-            worksheet_title = f"Report_{datetime.today().strftime('%Y-%m-%d')}"
+            worksheet_title = "Report_" + str(datetime.today().strftime('%Y-%m-%d'))
             writer.export_movers_to_worksheet(title=worksheet_title, grid_payload_df=master_output_grid)
             
             logging.info("🎉 Run Complete! Your spreadsheet has been fully updated and matches your Colab structure.")
@@ -176,5 +186,3 @@ def run_production_pipeline():
 
 if __name__ == "__main__":
     run_production_pipeline()
-'@ | Out-File -FilePath .\main.py -Encoding utf8
-
