@@ -21,19 +21,17 @@ class MarketMoversTransformer:
         """
         logging.info("⚙️ Commencing rolling time-window vector performance metrics...")
         
-        if price_history_df.empty or len(price_history_df) < max(self.lookback_days):
-            logging.error("❌ Vector Transformation Block Failed: Insufficient historical data rows.")
+        # FIX: Check if empty, but do not crash if the dataframe has fewer than 360 rows.
+        if price_history_df.empty:
+            logging.error("❌ Vector Transformation Block Failed: Price history DataFrame is completely empty.")
             return pd.DataFrame()
 
         performance_records = []
-        
-        # Calculate trailing endpoints based on the newest available closing matrix row
         latest_date = price_history_df.index.max()
         
         for ticker in price_history_df.columns:
             latest_price = price_history_df[ticker].iloc[-1]
             
-            # Prevent processing dead or completely unpriced entities
             if pd.isna(latest_price) or latest_price == 0:
                 continue
                 
@@ -42,14 +40,18 @@ class MarketMoversTransformer:
             for days in self.lookback_days:
                 target_past_date = latest_date - timedelta(days=days)
                 
-                # Locate closest historical data block row matching the trailing index target
+                # Check if we even have enough historical dates to look back this far for this ticker
+                first_available_date = price_history_df[ticker].dropna().index.min()
+                if pd.isna(first_available_date) or target_past_date < first_available_date:
+                    # Safely mark as NaN if the stock hasn't been trading long enough (e.g. less than 360 days)
+                    ticker_metrics[f"pct_change_{days}d"] = np.nan
+                    continue
+                
                 try:
-                    # Find the nearest date index entry without crashing on gaps
                     past_idx = price_history_df.index.get_indexer([target_past_date], method='pad')[0]
                     if past_idx != -1:
                         past_price = price_history_df[ticker].iloc[past_idx]
                         if past_price > 0:
-                            # Calculate percentage performance metrics directly
                             pct_change = ((latest_price - past_price) / past_price) * 100
                             ticker_metrics[f"pct_change_{days}d"] = round(pct_change, 2)
                         else:

@@ -1,2 +1,14 @@
+# Local Security Credentials (NEVER SHARE ON GITHUB)
 service_account.json
 .env
+
+# Stale Scripts and Development Backups
+archive/
+
+# Python Environment Compilation Caches
+__pycache__/
+*.pyc
+
+# OS Specific System Files
+.DS_Store
+Thumbs.db

@@ -1,28 +1,29 @@
-# 📈 Automated Stock Market Movers Pipeline
+# 📈 Automated Global Stock Market Movers Pipeline
 
-An enterprise-grade, object-oriented data engineering pipeline that automatically extracts global financial data arrays, filters for large-cap assets, tracks mathematical price momentum, and deploys dated reporting sheets to Google Workspace.
+An enterprise-grade, serverless data engineering pipeline that automatically ingests daily market snapshots across 13 major international exchanges, filters for large-cap assets, and compiles global top 25 gainers and losers into a stylized side-by-side dashboard layout on Google Sheets.
 
 ## ⚙️ Core Architecture & Features
-- **Data Engineering Module (`src/data_extractor.py`)**: Connects to the EODHD API to ingest bulk fundamental financial matrices, dynamically filtering out assets with a market capitalization below \$1 Billion.
-- **Vector Transformation Module (`src/transformer.py`)**: Computes multi-window chronological price array modifications across trailing 30, 90, and 360-day blocks.
-- **Enterprise Report Writer (`src/sheets_writer.py`)**: Authenticates non-interactively via a Google Cloud Platform (GCP) Service Account key string to write, format, and manage worksheet tabs.
-- **Master Orchestrator (`main.py`)**: A structured pipeline entry point that handles variable injection safety gates and coordinates execution.
+- **Data Aggregator Module (`src/data_extractor.py`)**: Connects securely to central EODHD API gateways to ingest bulk snapshot grids and extract isolated fundamental data points.
+- **Unified Handshake Framework (`src/sheets_writer.py`)**: A platform-independent authentication module that utilizes a localized physical service file (`service_account.json`) when executing locally, or falls back to parsed environment string matrices when running in the cloud.
+- **Master Production Orchestrator (`main.py`)**: The pipeline's command gateway. It downloads snapshots for all global listings simultaneously, separates domestic vs. foreign equities, splits tables vertically by asset class, and sets side-by-side vertical tables (Gainers on the left, Losers on the right).
 
 ## 🚀 Cloud Automation Framework (GitHub Actions)
-This project operates as a fully autonomous, serverless pipeline using **GitHub Actions workflow containers**. 
-- **The Engine Schedulers**: Configured with an automated `cron` expression matrix to awaken, install virtual dependencies, ingest credentials from encrypted GitHub Secrets, and run the pipeline completely in the cloud.
-- **The Routine Sync**: Fires automatically at **1:00 PM UTC (8:00 AM Central Time) Monday through Friday**, delivering data to stakeholders before market open without requiring local machine compute.
+This project operates as a fully autonomous, serverless cron architecture using **GitHub Actions workflow containers**.
+- **The Schedulers**: Configured to initialize a clean Python 3.11 container environment, install explicit project dependencies, inject encrypted GitHub Repository Secrets, and run without using any local computing resources.
+- **The Routine Sync**: Fires automatically at **1:00 PM UTC (8:00 AM Central Time) Monday through Friday**, processing over 80,000 global tickers and generating your reports before market open.
 
 ## 🛠️ Local Execution Checklist
-1. Clone this repository to your environment.
-2. Install modern dependencies inside a Python 3.11 playground:
+1. Clone this repository to your environment workspace.
+2. Activate your clean virtual environment and install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
-3. Establish your localized security files:
+3. Establish your localized security environment:
    - Create a root `.env` file containing your `EODHD_API_KEY`.
-   - Place your Google keys in an isolated `service_account.json` file (automatically masked by `.gitignore`).
-4. Execute the master production script:
+   - Place your Google Cloud account key file named exactly `service_account.json` in the root folder (automatically masked by `.gitignore`).
+4. Execute the production orchestrator:
    ```bash
-   python main.py
+   python -B main.py
+   ```
+
    ```
