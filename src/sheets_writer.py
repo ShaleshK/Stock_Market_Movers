@@ -13,21 +13,19 @@ class GoogleSheetsReportWriter:
     def __init__(self, spreadsheet_name: str, credential_json_str: Optional[str] = None):
         self.spreadsheet_name = spreadsheet_name
         self.credential_json_str = credential_json_str or os.getenv("GCS_SERVICE_ACCOUNT_KEY_JSON")
-        self.client: Optional[gspread.Client] = None
-        self.workbook: Optional[gspread.Spreadsheet] = None
+        self.client = None
+        self.workbook = None
         
         self._authenticate_service_account()
 
     def _authenticate_service_account(self):
-        """Initializes secure server-to-server connection bypassing .env string errors dynamically."""
+        """Initializes secure server-to-server connection bypassing string wrapping anomalies."""
         logging.info("📝 Synchronizing final data arrays into Google Sheets...")
-        
-        # FIXED: Targets the file directly inside your central Stock_Market_Movers root path folder
-        local_creds_path = r"C:\Users\shale\Documents\Shalesh Kumbhat\Documents\Stock_Market_Movers\service_account.json"
+        local_creds_path = "service_account.json"
         
         try:
             if os.path.exists(local_creds_path):
-                logging.info(f"🔑 Local Path Located: Ingesting credentials from {local_creds_path}")
+                logging.info(f"🔑 Local File Detected: Ingesting credentials from {local_creds_path}")
                 with open(local_creds_path, "r") as json_file:
                     creds_dict = json.load(json_file)
             else:
@@ -38,13 +36,13 @@ class GoogleSheetsReportWriter:
                     
             self.client = gspread.service_account_from_dict(creds_dict)
             self.workbook = self.client.open(self.spreadsheet_name)
-            logging.info(f"📁 Successfully connected to target workbook workspace: '{self.spreadsheet_name}'")
+            logging.info(f"📁 Successfully connected to workbook: '{self.spreadsheet_name}'")
         except Exception as e:
             logging.error(f"💥 Critical authentication failure to Google Sheets API: {e}")
             raise
 
     def export_movers_to_worksheet(self, title: str, grid_payload_df: pd.DataFrame):
-        """Writes the side-by-side Colab output layout directly onto your active canvas tab."""
+        """Writes the side-by-side layout matrix directly onto your active sheet canvas tab."""
         if self.workbook is None:
             raise RuntimeError("Cannot write data: Client is not authenticated.")
 

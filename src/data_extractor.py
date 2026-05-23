@@ -13,11 +13,7 @@ class EODHDEquityExtractor:
             raise ValueError("A valid EODHD API Key must be provided.")
 
     def fetch_individual_fundamentals(self, ticker: str) -> Dict[str, Any]:
-        """
-        Requests individual metrics for a targeted ticker code.
-        Converts dot formatting (AAPL.US) to EODHD required dash formatting (AAPL-US).
-        """
-        # FIXED: Converts dot format (AAPL.US) to required API dash format (AAPL-US)
+        """Requests individual fundamental company sheets using required dash formatting."""
         clean_ticker = str(ticker).upper().replace(".", "-")
         fund_url = f"https://eodhd.com{clean_ticker}"
         params = {"api_token": self.api_key, "fmt": "json"}
@@ -37,4 +33,5 @@ class EODHDEquityExtractor:
             logging.debug(f"Could not retrieve details for {ticker}: {e}")
             
         return {"Name": "Unknown", "MarketCap": 0}
+
 
